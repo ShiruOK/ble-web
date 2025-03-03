@@ -8,8 +8,11 @@
 <body>
     <h1>Bluetooth Low Energy Connection</h1>
     <button id="connect">Kết nối BLE</button>
+    <button id="send" disabled>Gửi thông báo</button>
     <p id="status">Chưa kết nối</p>
     <script>
+        let writeCharacteristic;
+
         function showNotification(title, message) {
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(title, { body: message });
@@ -26,7 +29,7 @@
             try {
                 const device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
-                    optionalServices: ['battery_service'] // Dịch vụ BLE cần truy cập
+                    optionalServices: ['battery_service', 'custom_service'] // Dịch vụ BLE cần truy cập
                 });
                 
                 document.getElementById('status').innerText = `Đã tìm thấy thiết bị: ${device.name}`;
@@ -44,13 +47,33 @@
                 document.getElementById('status').innerText += `\nMức pin: ${batteryLevel}%`;
                 showNotification("BLE Thông Tin", `Mức pin: ${batteryLevel}%`);
                 
+                // Kết nối với dịch vụ có thể ghi dữ liệu
+                const customService = await server.getPrimaryService('custom_service');
+                writeCharacteristic = await customService.getCharacteristic('custom_characteristic');
+                document.getElementById('send').disabled = false;
+                
                 device.addEventListener('gattserverdisconnected', () => {
                     document.getElementById('status').innerText = 'Mất kết nối';
                     showNotification("BLE Mất Kết Nối", "Thiết bị đã mất kết nối");
+                    document.getElementById('send').disabled = true;
                 });
             } catch (error) {
                 document.getElementById('status').innerText = `Lỗi: ${error.message}`;
                 showNotification("BLE Lỗi", error.message);
+            }
+        });
+
+        document.getElementById('send').addEventListener('click', async () => {
+            if (!writeCharacteristic) {
+                alert("Chưa kết nối với thiết bị BLE");
+                return;
+            }
+            try {
+                let message = new TextEncoder().encode("Hello BLE");
+                await writeCharacteristic.writeValue(message);
+                showNotification("BLE Gửi Thông Báo", "Đã gửi thông báo đến thiết bị BLE");
+            } catch (error) {
+                alert("Lỗi khi gửi thông báo: " + error.message);
             }
         });
     </script>

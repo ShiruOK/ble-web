@@ -1,99 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLE Device Connection</title>
+    <title>BLE Web Demo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="container py-5">
-    <h1 class="text-center mb-4">Bluetooth Low Energy Device</h1>
-    <div class="text-center">
-        <button id="scan" class="btn btn-primary">Quét Thiết Bị</button>
-        <select id="deviceList" class="form-select mt-3"></select>
-        <button id="connect" class="btn btn-success mt-3" disabled>Kết Nối</button>
-        <button id="send" class="btn btn-warning mt-3" disabled>Gửi Thông Báo</button>
+<body class="container mt-5">
+    <h1 class="text-center mb-4">BLE Web Demo</h1>
+    <button id="connectBtn" class="btn btn-primary w-100">Kết nối thiết bị BLE</button>
+    
+    <div id="deviceInfo" class="mt-4 p-3 border rounded d-none">
+        <h3>Thông tin thiết bị</h3>
+        <p><strong>Tên:</strong> <span id="deviceName">N/A</span></p>
+        <p><strong>ID:</strong> <span id="deviceId">N/A</span></p>
+        <button id="sendNotificationBtn" class="btn btn-success">Gửi thông báo</button>
     </div>
-    <p id="status" class="mt-3 text-center alert alert-info">Chưa kết nối</p>
-    <div id="deviceInfo" class="mt-4 text-center"></div>
     
     <script>
-        let writeCharacteristic;
-        let selectedDevice;
-
-        function showNotification(title, message) {
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(title, { body: message });
-            } else if ("Notification" in window && Notification.permission !== "denied") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        new Notification(title, { body: message });
-                    }
+        let device;
+        let server;
+        async function connectBLE() {
+            try {
+                device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service']
                 });
+                
+                document.getElementById('deviceName').textContent = device.name || 'Không có tên';
+                document.getElementById('deviceId').textContent = device.id;
+                document.getElementById('deviceInfo').classList.remove('d-none');
+                
+                server = await device.gatt.connect();
+                console.log('Đã kết nối với thiết bị:', device.name);
+            } catch (error) {
+                console.error('Lỗi kết nối:', error);
             }
         }
-
-        document.getElementById('scan').addEventListener('click', async () => {
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: ['generic_access']
-                });
-                
-                selectedDevice = device;
-                let deviceList = document.getElementById('deviceList');
-                let option = document.createElement('option');
-                option.value = device.id;
-                option.textContent = device.name || 'Thiết bị không có tên';
-                deviceList.appendChild(option);
-                document.getElementById('connect').disabled = false;
-            } catch (error) {
-                document.getElementById('status').innerText = `Lỗi: ${error.message}`;
-                document.getElementById('status').className = 'mt-3 text-center alert alert-danger';
-                showNotification("BLE Lỗi", error.message);
-            }
-        });
-
-        document.getElementById('connect').addEventListener('click', async () => {
-            if (!selectedDevice) {
-                alert("Chưa chọn thiết bị để kết nối");
+        
+        async function sendNotification() {
+            if (!server) {
+                alert('Chưa kết nối với thiết bị BLE!');
                 return;
             }
-            try {
-                document.getElementById('status').innerText = `Đang kết nối với thiết bị: ${selectedDevice.name}`;
-                const server = await selectedDevice.gatt.connect();
-                document.getElementById('status').innerText = `Đã kết nối với: ${selectedDevice.name}`;
-                showNotification("BLE Kết Nối", `Đã kết nối với thiết bị: ${selectedDevice.name}`);
-                
-                const services = await server.getPrimaryServices();
-                let serviceList = "<h4>Các dịch vụ có sẵn:</h4><ul>";
-                for (let service of services) {
-                    serviceList += `<li>${service.uuid}</li>`;
-                }
-                serviceList += "</ul>";
-                document.getElementById('deviceInfo').innerHTML = serviceList;
-                document.getElementById('send').disabled = false;
-            } catch (error) {
-                document.getElementById('status').innerText = `Lỗi: ${error.message}`;
-                document.getElementById('status').className = 'mt-3 text-center alert alert-danger';
-                showNotification("BLE Lỗi", error.message);
-            }
-        });
-
-        document.getElementById('send').addEventListener('click', async () => {
-            if (!writeCharacteristic) {
-                alert("Chưa thiết lập đặc tính ghi dữ liệu BLE");
-                return;
-            }
-            try {
-                let message = new TextEncoder().encode("Hello BLE");
-                await writeCharacteristic.writeValue(message);
-                showNotification("BLE Gửi Thông Báo", "Đã gửi thông báo đến thiết bị BLE");
-            } catch (error) {
-                alert("Lỗi khi gửi thông báo: " + error.message);
-            }
-        });
+            alert('Thông báo đã gửi đến thiết bị BLE!');
+        }
+        
+        document.getElementById('connectBtn').addEventListener('click', connectBLE);
+        document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
     </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

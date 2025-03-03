@@ -36,7 +36,7 @@
             try {
                 const device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
-                    optionalServices: ['battery_service', '0000abcd-0000-1000-8000-00805f9b34fb']
+                    optionalServices: ['generic_access']
                 });
                 
                 selectedDevice = device;
@@ -64,41 +64,15 @@
                 document.getElementById('status').innerText = `Đã kết nối với: ${selectedDevice.name}`;
                 showNotification("BLE Kết Nối", `Đã kết nối với thiết bị: ${selectedDevice.name}`);
                 
-                const service = await server.getPrimaryService('battery_service');
-                const characteristic = await service.getCharacteristic('battery_level');
-                const value = await characteristic.readValue();
-                let batteryLevel = value.getUint8(0);
-                document.getElementById('status').innerText += `\nMức pin: ${batteryLevel}%`;
-                showNotification("BLE Thông Tin", `Mức pin: ${batteryLevel}%`);
+                const services = await server.getPrimaryServices();
+                console.log("Các dịch vụ có sẵn:");
+                services.forEach(service => console.log(service.uuid));
                 
-                const customService = await server.getPrimaryService('0000abcd-0000-1000-8000-00805f9b34fb');
-                writeCharacteristic = await customService.getCharacteristic('0000dcba-0000-1000-8000-00805f9b34fb');
-                document.getElementById('send').disabled = false;
-                
-                selectedDevice.addEventListener('gattserverdisconnected', () => {
-                    document.getElementById('status').innerText = 'Mất kết nối';
-                    document.getElementById('status').className = 'mt-3 text-center alert alert-danger';
-                    showNotification("BLE Mất Kết Nối", "Thiết bị đã mất kết nối");
-                    document.getElementById('send').disabled = true;
-                });
+                alert("Kiểm tra console để xem danh sách UUID dịch vụ của thiết bị.");
             } catch (error) {
                 document.getElementById('status').innerText = `Lỗi: ${error.message}`;
                 document.getElementById('status').className = 'mt-3 text-center alert alert-danger';
                 showNotification("BLE Lỗi", error.message);
-            }
-        });
-
-        document.getElementById('send').addEventListener('click', async () => {
-            if (!writeCharacteristic) {
-                alert("Chưa kết nối với thiết bị BLE");
-                return;
-            }
-            try {
-                let message = new TextEncoder().encode("Hello BLE");
-                await writeCharacteristic.writeValue(message);
-                showNotification("BLE Gửi Thông Báo", "Đã gửi thông báo đến thiết bị BLE");
-            } catch (error) {
-                alert("Lỗi khi gửi thông báo: " + error.message);
             }
         });
     </script>

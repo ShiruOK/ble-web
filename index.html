@@ -7,16 +7,35 @@
 </head>
 <body>
     <h1>Bluetooth Low Energy Connection</h1>
-    <button id="connect">Connect to Device</button>
-    <button id="disconnect" disabled>Disconnect</button>
-    <p id="status">Status: Disconnected</p>
-    <div id="device-info"></div>
-    <div id="notification-section" style="display: none;">
-        <h2>Send Notification</h2>
-        <input type="text" id="notification-input" placeholder="Enter notification message">
-        <button id="send-notification">Send Notification</button>
-    </div>
-
-    <script src="script.js"></script>
+    <button id="connect">Kết nối BLE</button>
+    <p id="status">Chưa kết nối</p>
+    <script>
+        document.getElementById('connect').addEventListener('click', async () => {
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['battery_service'] // Dịch vụ BLE cần truy cập
+                });
+                
+                document.getElementById('status').innerText = `Đã tìm thấy thiết bị: ${device.name}`;
+                
+                const server = await device.gatt.connect();
+                document.getElementById('status').innerText += '\nĐã kết nối';
+                
+                const service = await server.getPrimaryService('battery_service');
+                const characteristic = await service.getCharacteristic('battery_level');
+                
+                const value = await characteristic.readValue();
+                let batteryLevel = value.getUint8(0);
+                document.getElementById('status').innerText += `\nMức pin: ${batteryLevel}%`;
+                
+                device.addEventListener('gattserverdisconnected', () => {
+                    document.getElementById('status').innerText = 'Mất kết nối';
+                });
+            } catch (error) {
+                document.getElementById('status').innerText = `Lỗi: ${error.message}`;
+            }
+        });
+    </script>
 </body>
 </html>

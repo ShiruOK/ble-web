@@ -10,6 +10,18 @@
     <button id="connect">Kết nối BLE</button>
     <p id="status">Chưa kết nối</p>
     <script>
+        function showNotification(title, message) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, { body: message });
+            } else if ("Notification" in window && Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification(title, { body: message });
+                    }
+                });
+            }
+        }
+
         document.getElementById('connect').addEventListener('click', async () => {
             try {
                 const device = await navigator.bluetooth.requestDevice({
@@ -18,9 +30,11 @@
                 });
                 
                 document.getElementById('status').innerText = `Đã tìm thấy thiết bị: ${device.name}`;
+                showNotification("BLE Kết Nối", `Đã tìm thấy thiết bị: ${device.name}`);
                 
                 const server = await device.gatt.connect();
                 document.getElementById('status').innerText += '\nĐã kết nối';
+                showNotification("BLE Kết Nối", "Đã kết nối với thiết bị BLE");
                 
                 const service = await server.getPrimaryService('battery_service');
                 const characteristic = await service.getCharacteristic('battery_level');
@@ -28,12 +42,15 @@
                 const value = await characteristic.readValue();
                 let batteryLevel = value.getUint8(0);
                 document.getElementById('status').innerText += `\nMức pin: ${batteryLevel}%`;
+                showNotification("BLE Thông Tin", `Mức pin: ${batteryLevel}%`);
                 
                 device.addEventListener('gattserverdisconnected', () => {
                     document.getElementById('status').innerText = 'Mất kết nối';
+                    showNotification("BLE Mất Kết Nối", "Thiết bị đã mất kết nối");
                 });
             } catch (error) {
                 document.getElementById('status').innerText = `Lỗi: ${error.message}`;
+                showNotification("BLE Lỗi", error.message);
             }
         });
     </script>

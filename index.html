@@ -16,11 +16,14 @@
         <p><strong>ID:</strong> <span id="deviceId">N/A</span></p>
         <p><strong>Thời gian kết nối:</strong> <span id="connectionTime">N/A</span></p>
         <p><strong>Thông lượng:</strong> <span id="throughput">N/A</span> kbps</p>
+        <p><strong>ATT MTU Size:</strong> <span id="mtuSize">N/A</span></p>
         <button id="sendNotificationBtn" class="btn btn-success">Gửi thông báo</button>
         <h4 class="mt-3">Nhắn tin</h4>
         <input type="text" id="messageInput" class="form-control mb-2" placeholder="Nhập tin nhắn...">
         <button id="sendMessageBtn" class="btn btn-info">Gửi tin nhắn</button>
         <div id="messageLog" class="mt-3 border p-2" style="height: 150px; overflow-y: auto;"></div>
+        <h4 class="mt-3">Câu lệnh truyền đi</h4>
+        <div id="commandLog" class="mt-3 border p-2" style="height: 150px; overflow-y: auto;"></div>
     </div>
     
     <script>
@@ -47,6 +50,7 @@
                 document.getElementById('connectionTime').textContent = connectionTime + ' giây';
                 
                 measureThroughput();
+                getMtuSize();
                 console.log('Đã kết nối với thiết bị:', device.name);
             } catch (error) {
                 console.error('Lỗi kết nối:', error);
@@ -64,11 +68,18 @@
             }, 1000);
         }
         
+        async function getMtuSize() {
+            if (!server) return;
+            let mtuSize = 23; // Giá trị mặc định của ATT MTU
+            document.getElementById('mtuSize').textContent = mtuSize;
+        }
+        
         async function sendNotification() {
             if (!server) {
                 alert('Chưa kết nối với thiết bị BLE!');
                 return;
             }
+            logCommand('Gửi thông báo đến thiết bị BLE');
             alert('Thông báo đã gửi đến thiết bị BLE!');
         }
         
@@ -79,7 +90,15 @@
             let newMessage = document.createElement('p');
             newMessage.textContent = 'Bạn: ' + message;
             messageLog.appendChild(newMessage);
+            logCommand('Gửi tin nhắn: ' + message);
             document.getElementById('messageInput').value = '';
+        }
+        
+        function logCommand(command) {
+            let commandLog = document.getElementById('commandLog');
+            let newCommand = document.createElement('p');
+            newCommand.textContent = command;
+            commandLog.appendChild(newCommand);
         }
         
         document.getElementById('connectBtn').addEventListener('click', connectBLE);

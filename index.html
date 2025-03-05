@@ -23,7 +23,16 @@
         <button id="sendMessageBtn" class="btn btn-info">Gửi tin nhắn</button>
         <div id="messageLog" class="mt-3 border p-2" style="height: 150px; overflow-y: auto;"></div>
         <h4 class="mt-3">Câu lệnh truyền đi</h4>
-        <div id="commandLog" class="mt-3 border p-2" style="height: 150px; overflow-y: auto;"></div>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Loại câu lệnh</th>
+                    <th>Thông lượng (kbps)</th>
+                    <th>Thời gian truyền (ms)</th>
+                </tr>
+            </thead>
+            <tbody id="commandLog"></tbody>
+        </table>
     </div>
     
     <script>
@@ -58,19 +67,19 @@
         }
         
         function measureThroughput() {
-            let dataSize = 1024; // Giả sử 1KB dữ liệu
+            let dataSize = 1024;
             let startTime = performance.now();
             setTimeout(() => {
                 let endTime = performance.now();
-                let duration = (endTime - startTime) / 1000; // Tính bằng giây
-                let throughput = (dataSize / duration).toFixed(2); // kbps
+                let duration = (endTime - startTime) / 1000;
+                let throughput = (dataSize / duration).toFixed(2);
                 document.getElementById('throughput').textContent = throughput;
             }, 1000);
         }
         
         async function getMtuSize() {
             if (!server) return;
-            let mtuSize = 23; // Giá trị mặc định của ATT MTU
+            let mtuSize = 23;
             document.getElementById('mtuSize').textContent = mtuSize;
         }
         
@@ -79,8 +88,10 @@
                 alert('Chưa kết nối với thiết bị BLE!');
                 return;
             }
-            logCommand('Gửi thông báo đến thiết bị BLE');
+            let startTime = performance.now();
             alert('Thông báo đã gửi đến thiết bị BLE!');
+            let endTime = performance.now();
+            logCommand('Gửi thông báo', startTime, endTime);
         }
         
         function sendMessage() {
@@ -90,15 +101,19 @@
             let newMessage = document.createElement('p');
             newMessage.textContent = 'Bạn: ' + message;
             messageLog.appendChild(newMessage);
-            logCommand('Gửi tin nhắn: ' + message);
+            
+            let startTime = performance.now();
+            let endTime = performance.now();
+            logCommand('Gửi tin nhắn', startTime, endTime);
             document.getElementById('messageInput').value = '';
         }
         
-        function logCommand(command) {
+        function logCommand(commandType, startTime, endTime) {
             let commandLog = document.getElementById('commandLog');
-            let newCommand = document.createElement('p');
-            newCommand.textContent = command;
-            commandLog.appendChild(newCommand);
+            let duration = (endTime - startTime).toFixed(2);
+            let throughput = (1024 / (duration / 1000)).toFixed(2);
+            let newRow = `<tr><td>${commandType}</td><td>${throughput}</td><td>${duration}</td></tr>`;
+            commandLog.innerHTML += newRow;
         }
         
         document.getElementById('connectBtn').addEventListener('click', connectBLE);

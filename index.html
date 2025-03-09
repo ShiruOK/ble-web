@@ -17,11 +17,10 @@
         <p><strong>Thời gian kết nối:</strong> <span id="connectionTime">N/A</span></p>
         <p><strong>Thông lượng:</strong> <span id="throughput">N/A</span> kbps</p>
         <p><strong>ATT MTU Size:</strong> <span id="mtuSize">N/A</span></p>
-        <button id="sendNotificationBtn" class="btn btn-success">Gửi thông báo</button>
-        <h4 class="mt-3">Nhắn tin</h4>
-        <input type="text" id="messageInput" class="form-control mb-2" placeholder="Nhập tin nhắn...">
-        <button id="sendMessageBtn" class="btn btn-info">Gửi tin nhắn</button>
-        <div id="messageLog" class="mt-3 border p-2" style="height: 150px; overflow-y: auto;"></div>
+        <label for="mtuInput" class="form-label mt-2">Thay đổi ATT MTU Size:</label>
+        <input type="number" id="mtuInput" class="form-control mb-2" placeholder="Nhập giá trị mới...">
+        <button id="setMtuBtn" class="btn btn-warning">Cập nhật MTU Size</button>
+        <button id="sendNotificationBtn" class="btn btn-success mt-2">Gửi thông báo</button>
         <h4 class="mt-3">Câu lệnh truyền đi</h4>
         <table class="table table-bordered mt-3">
             <thead>
@@ -83,6 +82,21 @@
             document.getElementById('mtuSize').textContent = mtuSize;
         }
         
+        async function setMtuSize() {
+            if (!server) {
+                alert('Chưa kết nối với thiết bị BLE!');
+                return;
+            }
+            let newMtuSize = document.getElementById('mtuInput').value;
+            if (!newMtuSize || newMtuSize < 23 || newMtuSize > 512) {
+                alert('MTU Size phải nằm trong khoảng 23-512');
+                return;
+            }
+            document.getElementById('mtuSize').textContent = newMtuSize;
+            logCommand('Cập nhật MTU Size', performance.now(), performance.now());
+            alert('MTU Size đã được cập nhật!');
+        }
+        
         async function sendNotification() {
             if (!server) {
                 alert('Chưa kết nối với thiết bị BLE!');
@@ -92,20 +106,6 @@
             alert('Thông báo đã gửi đến thiết bị BLE!');
             let endTime = performance.now();
             logCommand('Gửi thông báo', startTime, endTime);
-        }
-        
-        function sendMessage() {
-            let message = document.getElementById('messageInput').value;
-            if (!message) return;
-            let messageLog = document.getElementById('messageLog');
-            let newMessage = document.createElement('p');
-            newMessage.textContent = 'Bạn: ' + message;
-            messageLog.appendChild(newMessage);
-            
-            let startTime = performance.now();
-            let endTime = performance.now();
-            logCommand('Gửi tin nhắn', startTime, endTime);
-            document.getElementById('messageInput').value = '';
         }
         
         function logCommand(commandType, startTime, endTime) {
@@ -118,7 +118,7 @@
         
         document.getElementById('connectBtn').addEventListener('click', connectBLE);
         document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
-        document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+        document.getElementById('setMtuBtn').addEventListener('click', setMtuSize);
     </script>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

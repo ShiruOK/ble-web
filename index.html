@@ -20,8 +20,6 @@
         <label for="mtuInput" class="form-label mt-2">Thay đổi ATT MTU Size:</label>
         <input type="number" id="mtuInput" class="form-control mb-2" placeholder="Nhập giá trị mới...">
         <button id="setMtuBtn" class="btn btn-warning">Cập nhật MTU Size</button>
-        <button id="sendNotificationBtn" class="btn btn-success mt-2">Gửi thông báo</button>
-        <p id="notificationStatus" class="mt-2 text-success d-none">Đã gửi thông báo!</p>
         <h4 class="mt-3">Câu lệnh truyền đi</h4>
         <table class="table table-bordered mt-3">
             <thead>
@@ -33,6 +31,7 @@
             </thead>
             <tbody id="commandLog"></tbody>
         </table>
+        <button id="sendNotificationBtn" class="btn btn-success mt-3">Gửi thông báo</button>
     </div>
     
     <script>
@@ -69,19 +68,6 @@
             }
         }
         
-        async function sendNotification() {
-            if (!characteristic) {
-                alert('Chưa kết nối với thiết bị BLE!');
-                return;
-            }
-            let startTime = performance.now();
-            let data = new Uint8Array([1]);
-            await characteristic.writeValue(data);
-            let endTime = performance.now();
-            logCommand('Gửi thông báo', startTime, endTime);
-            document.getElementById('notificationStatus').classList.remove('d-none');
-        }
-        
         function measureThroughput() {
             let dataSize = 1024;
             let startTime = performance.now();
@@ -114,6 +100,22 @@
             alert('MTU Size đã được cập nhật!');
         }
         
+        async function sendNotification() {
+            if (!characteristic) {
+                alert('Chưa kết nối với thiết bị BLE!');
+                return;
+            }
+            try {
+                let encoder = new TextEncoder();
+                let data = encoder.encode('Thông báo từ Web BLE');
+                await characteristic.writeValue(data);
+                alert('Đã gửi thông báo!');
+                logCommand('Gửi thông báo', performance.now(), performance.now());
+            } catch (error) {
+                console.error('Lỗi gửi thông báo:', error);
+            }
+        }
+        
         function logCommand(commandType, startTime, endTime) {
             let commandLog = document.getElementById('commandLog');
             let duration = (endTime - startTime).toFixed(2);
@@ -123,8 +125,8 @@
         }
         
         document.getElementById('connectBtn').addEventListener('click', connectBLE);
-        document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
         document.getElementById('setMtuBtn').addEventListener('click', setMtuSize);
+        document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
     </script>
 </body>
 </html>

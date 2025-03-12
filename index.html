@@ -21,6 +21,7 @@
         <input type="number" id="mtuInput" class="form-control mb-2" placeholder="Nhập giá trị mới...">
         <button id="setMtuBtn" class="btn btn-warning">Cập nhật MTU Size</button>
         <button id="sendNotificationBtn" class="btn btn-success mt-2">Gửi thông báo</button>
+        <p id="notificationStatus" class="mt-2 text-success d-none">Đã gửi thông báo!</p>
         <h4 class="mt-3">Câu lệnh truyền đi</h4>
         <table class="table table-bordered mt-3">
             <thead>
@@ -78,7 +79,7 @@
             await characteristic.writeValue(data);
             let endTime = performance.now();
             logCommand('Gửi thông báo', startTime, endTime);
-            alert('Đã gửi thông báo!');
+            document.getElementById('notificationStatus').classList.remove('d-none');
         }
         
         function measureThroughput() {

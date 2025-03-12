@@ -20,7 +20,8 @@
         <label for="mtuInput" class="form-label mt-2">Thay đổi ATT MTU Size:</label>
         <input type="number" id="mtuInput" class="form-control mb-2" placeholder="Nhập giá trị mới...">
         <button id="setMtuBtn" class="btn btn-warning">Cập nhật MTU Size</button>
-        <button id="sendNotificationBtn" class="btn btn-success mt-3">Gửi thông báo</button>
+        <button id="sendWriteCommandBtn" class="btn btn-info mt-3">Gửi lệnh ghi</button>
+        <button id="sendWriteAndNotifyBtn" class="btn btn-danger mt-3">Gửi lệnh ghi và thông báo</button>
         <h4 class="mt-3">Câu lệnh truyền đi</h4>
         <table class="table table-bordered mt-3">
             <thead>
@@ -68,50 +69,35 @@
             }
         }
         
-        function measureThroughput() {
-            let dataSize = 1024;
-            let startTime = performance.now();
-            setTimeout(() => {
-                let endTime = performance.now();
-                let duration = (endTime - startTime) / 1000;
-                let throughput = (dataSize / duration).toFixed(2);
-                document.getElementById('throughput').textContent = throughput;
-            }, 1000);
-        }
-        
-        async function getMtuSize() {
-            if (!server) return;
-            let mtuSize = 23;
-            document.getElementById('mtuSize').textContent = mtuSize;
-        }
-        
-        async function setMtuSize() {
-            if (!server) {
-                alert('Chưa kết nối với thiết bị BLE!');
-                return;
-            }
-            let newMtuSize = document.getElementById('mtuInput').value;
-            if (!newMtuSize || newMtuSize < 23 || newMtuSize > 512) {
-                alert('MTU Size phải nằm trong khoảng 23-512');
-                return;
-            }
-            document.getElementById('mtuSize').textContent = newMtuSize;
-            logCommand('Cập nhật MTU Size', performance.now(), performance.now());
-            alert('MTU Size đã được cập nhật!');
-        }
-        
-        async function sendNotification() {
+        async function sendWriteCommand() {
             if (!characteristic) {
                 alert('Chưa kết nối với thiết bị BLE!');
                 return;
             }
             try {
-                let message = new TextEncoder().encode('Bạn có thông báo');
+                let message = new TextEncoder().encode('Write command');
                 await characteristic.writeValue(message);
-                alert('Thông báo đã được gửi đến thiết bị BLE!');
-                logCommand('Gửi thông báo', performance.now(), performance.now());
+                alert('Lệnh ghi đã được gửi!');
+                logCommand('Write command', performance.now(), performance.now());
             } catch (error) {
-                console.error('Lỗi gửi thông báo:', error);
+                console.error('Lỗi gửi lệnh ghi:', error);
+            }
+        }
+        
+        async function sendWriteAndNotify() {
+            if (!characteristic) {
+                alert('Chưa kết nối với thiết bị BLE!');
+                return;
+            }
+            try {
+                let messageWrite = new TextEncoder().encode('Write command');
+                let messageNotify = new TextEncoder().encode('Notification message');
+                await characteristic.writeValue(messageWrite);
+                await characteristic.writeValue(messageNotify);
+                alert('Lệnh ghi và thông báo đã được gửi!');
+                logCommand('Write & Notify', performance.now(), performance.now());
+            } catch (error) {
+                console.error('Lỗi gửi lệnh ghi và thông báo:', error);
             }
         }
         
@@ -125,7 +111,8 @@
         
         document.getElementById('connectBtn').addEventListener('click', connectBLE);
         document.getElementById('setMtuBtn').addEventListener('click', setMtuSize);
-        document.getElementById('sendNotificationBtn').addEventListener('click', sendNotification);
+        document.getElementById('sendWriteCommandBtn').addEventListener('click', sendWriteCommand);
+        document.getElementById('sendWriteAndNotifyBtn').addEventListener('click', sendWriteAndNotify);
     </script>
 </body>
 </html>

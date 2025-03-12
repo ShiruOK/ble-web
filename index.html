@@ -15,25 +15,51 @@
             <h3>Thông tin Thiết bị</h3>
             <p><strong>Tên:</strong> <span id="deviceName"></span></p>
             <p><strong>ID:</strong> <span id="deviceId"></span></p>
-            <button id="notifyBtn" class="btn btn-success">Gửi Thông báo</button>
+            <p><strong>Trạng thái:</strong> <span id="deviceStatus">Chưa nhận thông báo</span></p>
+            <p><strong>Thông lượng:</strong> <span id="throughput">Đang đo...</span></p>
+            <p><strong>ATT MTU Size:</strong> <span id="mtuSize">Chưa xác định</span></p>
+            <input type="number" id="mtuInput" class="form-control mt-2" placeholder="Nhập giá trị MTU mới...">
+            <button id="changeMtuBtn" class="btn btn-secondary mt-2">Thay đổi ATT MTU Size</button>
+            <button id="notifyBtn" class="btn btn-success mt-2">Gửi Thông báo</button>
+            <button id="startThroughputTest" class="btn btn-info mt-2">Đo Thông lượng</button>
+            
+            <h3 class="mt-4">Lệnh Truyền BLE</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Loại Lệnh</th>
+                        <th>Nội dung</th>
+                        <th>Thông lượng (Mbps)</th>
+                    </tr>
+                </thead>
+                <tbody id="commandLog"></tbody>
+            </table>
         </div>
     </div>
 
     <script>
         let bluetoothDevice;
+        let throughputStartTime;
 
         document.getElementById('connectBtn').addEventListener('click', async () => {
             try {
                 bluetoothDevice = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
-                    optionalServices: ['battery_service']
+                    optionalServices: ['battery_service', 'custom_service']
                 });
                 
                 document.getElementById('deviceName').textContent = bluetoothDevice.name || 'Không xác định';
                 document.getElementById('deviceId').textContent = bluetoothDevice.id;
                 document.getElementById('deviceInfo').classList.remove('d-none');
+                
+                logCommand('Kết nối', `Thiết bị: ${bluetoothDevice.name}`, '-');
+                
+                // Lấy ATT MTU Size (giả lập)
+                document.getElementById('mtuSize').textContent = '23 bytes (giả lập)';
             } catch (error) {
                 console.error('Lỗi kết nối BLE:', error);
+                logCommand('Lỗi', error.message, '-');
             }
         });
 
@@ -42,8 +68,48 @@
                 alert('Vui lòng kết nối thiết bị trước!');
                 return;
             }
-            alert('Thông báo đã gửi đến thiết bị BLE!');
+            document.getElementById('deviceStatus').textContent = 'Thông báo đã được gửi!';
+            logCommand('Gửi thông báo', 'Thông báo đến thiết bị BLE', (Math.random() * 2 + 1).toFixed(2));
         });
+
+        document.getElementById('startThroughputTest').addEventListener('click', () => {
+            throughputStartTime = performance.now();
+            setTimeout(() => {
+                let speed = (Math.random() * 5 + 1).toFixed(2);
+                document.getElementById('throughput').textContent = `Tốc độ: ${speed} Mbps (giả lập)`;
+                logCommand('Đo thông lượng', `Tốc độ: ${speed} Mbps`, speed);
+            }, 2000);
+        });
+
+        document.getElementById('changeMtuBtn').addEventListener('click', () => {
+            let mtuValue = document.getElementById('mtuInput').value;
+            if (!mtuValue || mtuValue < 23 || mtuValue > 512) {
+                alert('Vui lòng nhập giá trị MTU hợp lệ (23-512).');
+                return;
+            }
+            document.getElementById('mtuSize').textContent = `${mtuValue} bytes`;
+            logCommand('Thay đổi MTU', `Giá trị mới: ${mtuValue} bytes`, '-');
+        });
+
+        function logCommand(type, content, speed) {
+            let logTable = document.getElementById('commandLog');
+            let row = document.createElement('tr');
+            let timeCell = document.createElement('td');
+            let typeCell = document.createElement('td');
+            let contentCell = document.createElement('td');
+            let speedCell = document.createElement('td');
+
+            timeCell.textContent = new Date().toLocaleTimeString();
+            typeCell.textContent = type;
+            contentCell.textContent = content;
+            speedCell.textContent = speed + ' Mbps';
+
+            row.appendChild(timeCell);
+            row.appendChild(typeCell);
+            row.appendChild(contentCell);
+            row.appendChild(speedCell);
+            logTable.appendChild(row);
+        }
     </script>
 </body>
 </html>

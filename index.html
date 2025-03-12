@@ -106,10 +106,12 @@
                 return;
             }
             try {
-                let encoder = new TextEncoder();
-                let data = encoder.encode('Thông báo từ Web BLE');
-                await characteristic.writeValue(data);
-                alert('Đã gửi thông báo!');
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    let value = new TextDecoder().decode(event.target.value);
+                    console.log('Thông báo nhận được:', value);
+                });
+                alert('Thông báo đã được kích hoạt trên thiết bị BLE!');
                 logCommand('Gửi thông báo', performance.now(), performance.now());
             } catch (error) {
                 console.error('Lỗi gửi thông báo:', error);
